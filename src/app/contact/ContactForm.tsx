@@ -239,7 +239,7 @@ export default function ContactForm() {
         Submitted: ${new Date().toLocaleString()}
       `;
 
-      const mailtoLink = `mailto:HelpWithMyAssignments@HelpWithMyAssignments.com?subject=New Project Submission: ${encodeURIComponent(formData.projectTitle)}&body=${encodeURIComponent(emailBody)}`;
+      const mailtoLink = `mailto:assignmentsplus@assigmentsplus.in?subject=New Project Submission: ${encodeURIComponent(formData.projectTitle)}&body=${encodeURIComponent(emailBody)}`;
       
       window.location.href = mailtoLink;
 
@@ -595,7 +595,7 @@ export default function ContactForm() {
           <a href="/terms" className={styles.link}>Terms of Service</a> and{' '}
           <a href="/privacy" className={styles.link}>Privacy Policy</a>.
           Your information will be sent directly to{' '}
-          <strong>HelpWithMyAssignments@HelpWithMyAssignments.com</strong>
+          <strong>assignmentsplus@assigmentsplus.in</strong>
         </p>
       </div>
     </form>

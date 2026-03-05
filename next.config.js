@@ -2,8 +2,6 @@
 const path = require('path');
 
 const nextConfig = {
-  // ✅ CRITICAL for Hostinger Node.js hosting
-  // Without this, Hostinger has no server.js to start and returns 503
   output: 'standalone',
 
   webpack: (config, { dev }) => {

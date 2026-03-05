@@ -2,27 +2,23 @@
 const path = require('path');
 
 const nextConfig = {
-  // Disable webpack caching which causes issues on Windows
-  webpack: (config, { dev, isServer }) => {
+  // ✅ CRITICAL for Hostinger Node.js hosting
+  // Without this, Hostinger has no server.js to start and returns 503
+  output: 'standalone',
+
+  webpack: (config, { dev }) => {
     if (dev) {
       config.cache = false;
     }
-    
-    // Fix for Windows paths
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': path.resolve(__dirname, 'src'),
     };
-    
     return config;
   },
-  
-  // Disable telemetry
+
   distDir: '.next',
-  
-  // Enable SWC minification (faster)
-  swcMinify: true,
-  
+
   images: {
     remotePatterns: [
       {
@@ -31,7 +27,7 @@ const nextConfig = {
       },
     ],
   },
-  
+
   async headers() {
     return [
       {

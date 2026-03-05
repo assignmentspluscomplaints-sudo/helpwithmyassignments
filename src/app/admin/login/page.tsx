@@ -19,12 +19,20 @@ export default function AdminLogin() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        credentials: "include",
       });
 
       const data = await res.json();
 
       if (!res.ok) {
         setError(data.error || "Login failed");
+        return;
+      }
+
+      // Confirm cookie is set before redirecting (avoids redirect loop)
+      const verifyRes = await fetch("/api/auth/verify", { credentials: "include" });
+      if (!verifyRes.ok) {
+        setError("Session could not be established. Please try again.");
         return;
       }
 

@@ -47,7 +47,7 @@ export default function AdminCreate() {
   });
 
   useEffect(() => {
-    fetch("/api/auth/verify").then((r) => {
+    fetch("/api/auth/verify", { credentials: "include" }).then((r) => {
       if (!r.ok) router.push("/admin/login");
     });
   }, [router]);
@@ -113,6 +113,7 @@ export default function AdminCreate() {
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           ...form,
           content,

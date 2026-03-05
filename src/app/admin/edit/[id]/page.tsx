@@ -28,10 +28,10 @@ export default function AdminEdit() {
 
   useEffect(() => {
     const init = async () => {
-      const authRes = await fetch("/api/auth/verify");
+      const authRes = await fetch("/api/auth/verify", { credentials: "include" });
       if (!authRes.ok) { router.push("/admin/login"); return; }
 
-      const res = await fetch(`/api/posts/${params.id}`);
+      const res = await fetch(`/api/posts/${params.id}`, { credentials: "include" });
       if (!res.ok) { router.push("/admin/posts"); return; }
 
       const data = await res.json();
@@ -103,6 +103,7 @@ export default function AdminEdit() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, content, readTime: parseInt(form.readTime) }),
+        credentials: "include",
       });
 
       if (!res.ok) {

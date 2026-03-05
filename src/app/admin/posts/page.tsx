@@ -27,13 +27,13 @@ export default function AdminPosts() {
   };
 
   const checkAuth = useCallback(async () => {
-    const res = await fetch("/api/auth/verify");
+    const res = await fetch("/api/auth/verify", { credentials: "include" });
     if (!res.ok) router.push("/admin/login");
   }, [router]);
 
   const fetchPosts = useCallback(async () => {
     try {
-      const res = await fetch("/api/posts?admin=true");
+      const res = await fetch("/api/posts?admin=true", { credentials: "include" });
       const data = await res.json();
       setPosts(data.posts || []);
     } catch {
@@ -54,6 +54,7 @@ export default function AdminPosts() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ published: !post.published }),
+        credentials: "include",
       });
       if (res.ok) {
         setPosts((prev) =>
@@ -74,7 +75,7 @@ export default function AdminPosts() {
     if (!confirm("Delete this post? This cannot be undone.")) return;
     setDeleting(id);
     try {
-      const res = await fetch(`/api/posts/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/posts/${id}`, { method: "DELETE", credentials: "include" });
       if (res.ok) {
         setPosts((prev) => prev.filter((p) => p.id !== id));
         showToast("Post deleted");
@@ -87,7 +88,7 @@ export default function AdminPosts() {
   };
 
   const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     router.push("/admin/login");
   };
 

@@ -28,47 +28,30 @@ export default function AdminEdit() {
 
   useEffect(() => {
     const init = async () => {
-      const authRes = await fetch("/api/auth/verify", { credentials: "include" });
-      if (!authRes.ok) { router.push("/admin/login"); return; }
-
+      // ✅ Removed /api/auth/verify call — middleware handles auth server-side.
+      // Just fetch the post directly; 401 means session expired → redirect to login.
       const res = await fetch(`/api/posts/${params.id}`, { credentials: "include" });
-      if (!res.ok) { router.push("/admin/posts"); return; }
-
+      if (!res.ok) {
+        router.push(res.status === 401 ? "/admin/login" : "/admin/posts");
+        return;
+      }
       const data = await res.json();
       const post = data.post;
-
       setForm({
-        title: post.title,
-        slug: post.slug,
-        excerpt: post.excerpt,
-        coverImage: post.coverImage || "",
-        metaTitle: post.metaTitle || "",
-        metaDesc: post.metaDesc || "",
-        focusKw: post.focusKw || "",
-        category: post.category,
-        author: post.author,
-        readTime: String(post.readTime),
-        published: post.published,
+        title: post.title, slug: post.slug, excerpt: post.excerpt,
+        coverImage: post.coverImage || "", metaTitle: post.metaTitle || "",
+        metaDesc: post.metaDesc || "", focusKw: post.focusKw || "",
+        category: post.category, author: post.author,
+        readTime: String(post.readTime), published: post.published,
       });
-
-      if (editorRef.current) {
-        editorRef.current.innerHTML = post.content;
-      }
+      if (editorRef.current) editorRef.current.innerHTML = post.content;
       setLoading(false);
     };
-
     init();
   }, [params.id, router]);
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  const exec = (command: string, value?: string) => {
-    editorRef.current?.focus();
-    document.execCommand(command, false, value);
-  };
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+  const exec = (command: string, value?: string) => { editorRef.current?.focus(); document.execCommand(command, false, value); };
 
   const insertHeading = (level: number) => {
     editorRef.current?.focus();
@@ -93,10 +76,8 @@ export default function AdminEdit() {
   const handleSave = async () => {
     const content = editorRef.current?.innerHTML || "";
     if (!form.title.trim() || !form.slug.trim() || !form.excerpt.trim()) {
-      showToast("❌ Title, slug and excerpt required");
-      return;
+      showToast("❌ Title, slug and excerpt required"); return;
     }
-
     setSaving(true);
     try {
       const res = await fetch(`/api/posts/${params.id}`, {
@@ -105,39 +86,24 @@ export default function AdminEdit() {
         body: JSON.stringify({ ...form, content, readTime: parseInt(form.readTime) }),
         credentials: "include",
       });
-
-      if (!res.ok) {
-        const d = await res.json();
-        showToast(`❌ ${d.error || "Failed"}`);
-        return;
-      }
-
+      if (!res.ok) { const d = await res.json(); showToast(`❌ ${d.error || "Failed"}`); return; }
       showToast("✅ Post updated!");
       setTimeout(() => router.push("/admin/posts"), 1000);
-    } catch {
-      showToast("❌ Network error");
-    } finally {
-      setSaving(false);
-    }
+    } catch { showToast("❌ Network error"); }
+    finally { setSaving(false); }
   };
 
   const toolbarBtns = [
-    { label: "H1", action: () => insertHeading(1) },
-    { label: "H2", action: () => insertHeading(2) },
-    { label: "H3", action: () => insertHeading(3) },
+    { label: "H1", action: () => insertHeading(1) }, { label: "H2", action: () => insertHeading(2) }, { label: "H3", action: () => insertHeading(3) },
     { label: "sep" },
-    { label: "B", action: () => exec("bold") },
-    { label: "I", action: () => exec("italic") },
-    { label: "U", action: () => exec("underline") },
+    { label: "B", action: () => exec("bold") }, { label: "I", action: () => exec("italic") }, { label: "U", action: () => exec("underline") },
     { label: "sep" },
-    { label: "UL", action: () => exec("insertUnorderedList") },
-    { label: "OL", action: () => exec("insertOrderedList") },
+    { label: "UL", action: () => exec("insertUnorderedList") }, { label: "OL", action: () => exec("insertOrderedList") },
     { label: "sep" },
     { label: "🔗", action: () => { const u = prompt("URL:"); if (u) exec("createLink", u); } },
     { label: "❝", action: () => exec("formatBlock", "blockquote") },
     { label: "sep" },
-    { label: "↩", action: () => exec("undo") },
-    { label: "↪", action: () => exec("redo") },
+    { label: "↩", action: () => exec("undo") }, { label: "↪", action: () => exec("redo") },
   ];
 
   if (loading) {
@@ -182,130 +148,76 @@ export default function AdminEdit() {
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Post Title *</label>
-              <input
-                type="text" className="form-input" value={form.title}
-                onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-                placeholder="Post title..."
-              />
+              <input type="text" className="form-input" value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} placeholder="Post title..." />
             </div>
-
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">URL Slug *</label>
               <div style={{ position: "relative" }}>
-                <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "var(--muted2)", fontSize: "0.85rem", pointerEvents: "none" }}>
-                  /blog/
-                </span>
-                <input
-                  type="text" className="form-input" value={form.slug}
-                  onChange={(e) => setForm((p) => ({ ...p, slug: slugify(e.target.value) }))}
-                  style={{ paddingLeft: "58px" }}
-                />
+                <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "var(--muted2)", fontSize: "0.85rem", pointerEvents: "none" }}>/blog/</span>
+                <input type="text" className="form-input" value={form.slug} onChange={(e) => setForm((p) => ({ ...p, slug: slugify(e.target.value) }))} style={{ paddingLeft: "58px" }} />
               </div>
             </div>
-
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Excerpt *</label>
-              <textarea
-                className="form-textarea" value={form.excerpt} rows={3}
-                onChange={(e) => setForm((p) => ({ ...p, excerpt: e.target.value }))}
-                placeholder="Brief summary..."
-              />
+              <textarea className="form-textarea" value={form.excerpt} rows={3} onChange={(e) => setForm((p) => ({ ...p, excerpt: e.target.value }))} placeholder="Brief summary..." />
             </div>
-
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Content * — Use H1, H2, H3 for SEO structure</label>
               <div className="content-editor">
                 <div className="editor-toolbar">
                   {toolbarBtns.map((btn, i) =>
-                    btn.label === "sep" ? (
-                      <div key={i} className="editor-separator" />
-                    ) : (
-                      <button key={i} type="button" className="editor-btn" onClick={btn.action}>
-                        {btn.label}
-                      </button>
-                    )
+                    btn.label === "sep" ? <div key={i} className="editor-separator" /> :
+                    <button key={i} type="button" className="editor-btn" onClick={btn.action}>{btn.label}</button>
                   )}
                 </div>
-                <div
-                  ref={editorRef}
-                  className="editor-content"
-                  contentEditable
-                  suppressContentEditableWarning
-                  style={{ minHeight: "400px" }}
-                />
+                <div ref={editorRef} className="editor-content" contentEditable suppressContentEditableWarning style={{ minHeight: "400px" }} />
               </div>
             </div>
           </div>
 
-          {/* Sidebar */}
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <div className="glass" style={{ padding: "20px" }}>
-              <h3 style={{ fontFamily: "var(--font-display)", fontSize: "0.9rem", fontWeight: 700, marginBottom: "16px" }}>
-                Settings
-              </h3>
-
+              <h3 style={{ fontFamily: "var(--font-display)", fontSize: "0.9rem", fontWeight: 700, marginBottom: "16px" }}>Settings</h3>
               <div className="form-group" style={{ marginBottom: "12px" }}>
                 <label className="form-label">Status</label>
                 <div style={{ display: "flex", gap: "8px" }}>
                   {[{ v: false, l: "Draft" }, { v: true, l: "Published" }].map(({ v, l }) => (
-                    <button
-                      key={l}
-                      type="button"
-                      onClick={() => setForm((p) => ({ ...p, published: v }))}
-                      className="btn btn-sm"
-                      style={{
-                        flex: 1,
-                        justifyContent: "center",
-                        background: form.published === v ? "rgba(180,255,80,0.1)" : "var(--surface)",
-                        border: `1px solid ${form.published === v ? "rgba(180,255,80,0.3)" : "var(--border)"}`,
-                        color: form.published === v ? "var(--lime)" : "var(--muted)",
-                        borderRadius: "8px",
-                      }}
-                    >
+                    <button key={l} type="button" onClick={() => setForm((p) => ({ ...p, published: v }))} className="btn btn-sm"
+                      style={{ flex: 1, justifyContent: "center", background: form.published === v ? "rgba(180,255,80,0.1)" : "var(--surface)", border: `1px solid ${form.published === v ? "rgba(180,255,80,0.3)" : "var(--border)"}`, color: form.published === v ? "var(--lime)" : "var(--muted)", borderRadius: "8px" }}>
                       {l}
                     </button>
                   ))}
                 </div>
               </div>
-
               <div className="form-group" style={{ marginBottom: "12px" }}>
                 <label className="form-label">Category</label>
                 <select className="form-select" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}>
                   {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
                 </select>
               </div>
-
               <div className="form-group" style={{ marginBottom: "12px" }}>
                 <label className="form-label">Author</label>
                 <input type="text" className="form-input" value={form.author} onChange={(e) => setForm((p) => ({ ...p, author: e.target.value }))} />
               </div>
-
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Read Time (mins)</label>
                 <input type="number" className="form-input" value={form.readTime} min="1" max="60" onChange={(e) => setForm((p) => ({ ...p, readTime: e.target.value }))} />
               </div>
             </div>
-
             <div className="glass" style={{ padding: "20px" }}>
-              <h3 style={{ fontFamily: "var(--font-display)", fontSize: "0.9rem", fontWeight: 700, marginBottom: "16px" }}>
-                Cover Image
-              </h3>
+              <h3 style={{ fontFamily: "var(--font-display)", fontSize: "0.9rem", fontWeight: 700, marginBottom: "16px" }}>Cover Image</h3>
               <input type="url" className="form-input" value={form.coverImage} onChange={(e) => setForm((p) => ({ ...p, coverImage: e.target.value }))} placeholder="https://..." />
             </div>
-
             <div className="glass" style={{ padding: "20px" }}>
               <h3 style={{ fontFamily: "var(--font-display)", fontSize: "0.9rem", fontWeight: 700, marginBottom: "16px" }}>SEO</h3>
-
               <div className="form-group" style={{ marginBottom: "12px" }}>
                 <label className="form-label">Focus Keyword</label>
                 <input type="text" className="form-input" value={form.focusKw} onChange={(e) => setForm((p) => ({ ...p, focusKw: e.target.value }))} placeholder="assignment writing service" />
               </div>
-
               <div className="form-group" style={{ marginBottom: "12px" }}>
                 <label className="form-label">Meta Title ({form.metaTitle.length}/60)</label>
                 <input type="text" className="form-input" value={form.metaTitle} onChange={(e) => setForm((p) => ({ ...p, metaTitle: e.target.value }))} maxLength={70} />
               </div>
-
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Meta Description ({form.metaDesc.length}/155)</label>
                 <textarea className="form-textarea" value={form.metaDesc} rows={3} onChange={(e) => setForm((p) => ({ ...p, metaDesc: e.target.value }))} maxLength={160} />
@@ -315,9 +227,7 @@ export default function AdminEdit() {
         </div>
       </main>
 
-      {toast && (
-        <div className={`toast ${toast.startsWith("✅") ? "success" : "error"}`}>{toast}</div>
-      )}
+      {toast && <div className={`toast ${toast.startsWith("✅") ? "success" : "error"}`}>{toast}</div>}
     </div>
   );
 }

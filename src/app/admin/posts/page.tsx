@@ -26,14 +26,17 @@ export default function AdminPosts() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const checkAuth = useCallback(async () => {
-    const res = await fetch("/api/auth/verify", { credentials: "include" });
-    if (!res.ok) router.push("/admin/login");
-  }, [router]);
-
+  // ✅ Removed checkAuth() / verify call entirely.
+  // middleware.ts now handles auth server-side before the page renders.
+  // Calling /api/auth/verify from the client caused a race condition on
+  // Hostinger where the cookie hadn't propagated yet → redirect loop.
   const fetchPosts = useCallback(async () => {
     try {
       const res = await fetch("/api/posts?admin=true", { credentials: "include" });
+      if (res.status === 401) {
+        router.push("/admin/login");
+        return;
+      }
       const data = await res.json();
       setPosts(data.posts || []);
     } catch {
@@ -41,12 +44,11 @@ export default function AdminPosts() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
-    checkAuth();
     fetchPosts();
-  }, [checkAuth, fetchPosts]);
+  }, [fetchPosts]);
 
   const togglePublish = async (post: Post) => {
     try {
@@ -58,13 +60,9 @@ export default function AdminPosts() {
       });
       if (res.ok) {
         setPosts((prev) =>
-          prev.map((p) =>
-            p.id === post.id ? { ...p, published: !p.published } : p
-          )
+          prev.map((p) => (p.id === post.id ? { ...p, published: !p.published } : p))
         );
-        showToast(
-          post.published ? "Post unpublished" : "Post published!"
-        );
+        showToast(post.published ? "Post unpublished" : "Post published!");
       }
     } catch {
       showToast("Failed to update", "error");
@@ -94,49 +92,25 @@ export default function AdminPosts() {
 
   return (
     <div className="admin-layout">
-      {/* Sidebar */}
       <aside className="admin-sidebar">
         <div className="admin-sidebar-logo">
           <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--lime)", display: "inline-block" }} />
           <span>HWM<span style={{ color: "var(--lime)" }}>A</span></span>
           <span style={{ fontSize: "0.75rem", color: "var(--muted2)", marginLeft: "auto", fontFamily: "var(--font-body)" }}>Admin</span>
         </div>
-
         <ul className="admin-nav">
-          <li>
-            <Link href="/admin/posts" className="active">
-              <span>📄</span> All Posts
-            </Link>
-          </li>
-          <li>
-            <Link href="/admin/create">
-              <span>✏️</span> New Post
-            </Link>
-          </li>
-          <li>
-            <Link href="/blog">
-              <span>🌐</span> View Blog
-            </Link>
-          </li>
-          <li>
-            <Link href="/">
-              <span>🏠</span> View Site
-            </Link>
-          </li>
+          <li><Link href="/admin/posts" className="active"><span>📄</span> All Posts</Link></li>
+          <li><Link href="/admin/create"><span>✏️</span> New Post</Link></li>
+          <li><Link href="/blog"><span>🌐</span> View Blog</Link></li>
+          <li><Link href="/"><span>🏠</span> View Site</Link></li>
         </ul>
-
         <div style={{ padding: "12px", marginTop: "auto" }}>
-          <button
-            onClick={logout}
-            className="btn btn-ghost btn-sm"
-            style={{ width: "100%", justifyContent: "center" }}
-          >
+          <button onClick={logout} className="btn btn-ghost btn-sm" style={{ width: "100%", justifyContent: "center" }}>
             Sign Out
           </button>
         </div>
       </aside>
 
-      {/* Main */}
       <main className="admin-main">
         <div className="admin-header">
           <div>
@@ -145,49 +119,25 @@ export default function AdminPosts() {
               {posts.length} total · {posts.filter((p) => p.published).length} published
             </p>
           </div>
-          <Link href="/admin/create" className="btn btn-primary btn-sm">
-            + New Post
-          </Link>
+          <Link href="/admin/create" className="btn btn-primary btn-sm">+ New Post</Link>
         </div>
 
-        {/* Stats row */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "16px",
-            marginBottom: "32px",
-          }}
-        >
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "32px" }}>
           {[
             { label: "Total Posts", value: posts.length, icon: "📄" },
             { label: "Published", value: posts.filter((p) => p.published).length, icon: "✅" },
             { label: "Drafts", value: posts.filter((p) => !p.published).length, icon: "📝" },
           ].map((s) => (
-            <div
-              key={s.label}
-              className="glass"
-              style={{ padding: "20px", display: "flex", alignItems: "center", gap: "16px" }}
-            >
+            <div key={s.label} className="glass" style={{ padding: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
               <span style={{ fontSize: "1.5rem" }}>{s.icon}</span>
               <div>
-                <div
-                  style={{
-                    fontFamily: "var(--font-display)",
-                    fontSize: "1.5rem",
-                    fontWeight: 800,
-                    lineHeight: 1,
-                  }}
-                >
-                  {s.value}
-                </div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 800, lineHeight: 1 }}>{s.value}</div>
                 <div style={{ color: "var(--muted2)", fontSize: "0.8rem", marginTop: "2px" }}>{s.label}</div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Table */}
         <div className="glass" style={{ overflow: "hidden" }}>
           {loading ? (
             <div style={{ padding: "60px", textAlign: "center", display: "flex", justifyContent: "center" }}>
@@ -197,19 +147,13 @@ export default function AdminPosts() {
             <div style={{ padding: "60px", textAlign: "center" }}>
               <div style={{ fontSize: "2.5rem", marginBottom: "16px" }}>📝</div>
               <p style={{ color: "var(--muted)", marginBottom: "20px" }}>No posts yet</p>
-              <Link href="/admin/create" className="btn btn-primary btn-sm">
-                Create First Post
-              </Link>
+              <Link href="/admin/create" className="btn btn-primary btn-sm">Create First Post</Link>
             </div>
           ) : (
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Title</th>
-                  <th>Category</th>
-                  <th>Author</th>
-                  <th>Status</th>
-                  <th>Date</th>
+                  <th>Title</th><th>Category</th><th>Author</th><th>Status</th><th>Date</th>
                   <th style={{ textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
@@ -217,27 +161,10 @@ export default function AdminPosts() {
                 {posts.map((post) => (
                   <tr key={post.id}>
                     <td>
-                      <div>
-                        <div
-                          style={{
-                            fontWeight: 600,
-                            color: "var(--white)",
-                            fontSize: "0.875rem",
-                            marginBottom: "2px",
-                          }}
-                        >
-                          {post.title}
-                        </div>
-                        <div style={{ color: "var(--muted2)", fontSize: "0.75rem" }}>
-                          /blog/{post.slug}
-                        </div>
-                      </div>
+                      <div style={{ fontWeight: 600, color: "var(--white)", fontSize: "0.875rem", marginBottom: "2px" }}>{post.title}</div>
+                      <div style={{ color: "var(--muted2)", fontSize: "0.75rem" }}>/blog/{post.slug}</div>
                     </td>
-                    <td>
-                      <span className="badge" style={{ fontSize: "0.7rem" }}>
-                        {post.category}
-                      </span>
-                    </td>
+                    <td><span className="badge" style={{ fontSize: "0.7rem" }}>{post.category}</span></td>
                     <td style={{ fontSize: "0.85rem" }}>{post.author}</td>
                     <td>
                       <span className={`status-pill ${post.published ? "published" : "draft"}`}>
@@ -249,45 +176,14 @@ export default function AdminPosts() {
                     </td>
                     <td>
                       <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-                        <Link
-                          href={`/blog/${post.slug}`}
-                          target="_blank"
-                          className="btn btn-ghost btn-sm"
-                          style={{ padding: "6px 10px", fontSize: "0.75rem" }}
-                        >
-                          👁
-                        </Link>
-                        <Link
-                          href={`/admin/edit/${post.id}`}
-                          className="btn btn-ghost btn-sm"
-                          style={{ padding: "6px 10px", fontSize: "0.75rem" }}
-                        >
-                          ✏️
-                        </Link>
-                        <button
-                          onClick={() => togglePublish(post)}
-                          className="btn btn-ghost btn-sm"
-                          style={{
-                            padding: "6px 10px",
-                            fontSize: "0.75rem",
-                            color: post.published ? "var(--muted)" : "var(--lime)",
-                          }}
-                        >
+                        <Link href={`/blog/${post.slug}`} target="_blank" className="btn btn-ghost btn-sm" style={{ padding: "6px 10px", fontSize: "0.75rem" }}>👁</Link>
+                        <Link href={`/admin/edit/${post.id}`} className="btn btn-ghost btn-sm" style={{ padding: "6px 10px", fontSize: "0.75rem" }}>✏️</Link>
+                        <button onClick={() => togglePublish(post)} className="btn btn-ghost btn-sm"
+                          style={{ padding: "6px 10px", fontSize: "0.75rem", color: post.published ? "var(--muted)" : "var(--lime)" }}>
                           {post.published ? "Unpublish" : "Publish"}
                         </button>
-                        <button
-                          onClick={() => deletePost(post.id)}
-                          className="btn btn-sm"
-                          disabled={deleting === post.id}
-                          style={{
-                            padding: "6px 10px",
-                            fontSize: "0.75rem",
-                            background: "rgba(247,37,133,0.08)",
-                            border: "1px solid rgba(247,37,133,0.2)",
-                            color: "#ff6b9d",
-                            borderRadius: "8px",
-                          }}
-                        >
+                        <button onClick={() => deletePost(post.id)} className="btn btn-sm" disabled={deleting === post.id}
+                          style={{ padding: "6px 10px", fontSize: "0.75rem", background: "rgba(247,37,133,0.08)", border: "1px solid rgba(247,37,133,0.2)", color: "#ff6b9d", borderRadius: "8px" }}>
                           {deleting === post.id ? "..." : "🗑"}
                         </button>
                       </div>
@@ -300,7 +196,6 @@ export default function AdminPosts() {
         </div>
       </main>
 
-      {/* Toast */}
       {toast && (
         <div className={`toast ${toast.type}`}>
           <span>{toast.type === "success" ? "✅" : "❌"}</span>

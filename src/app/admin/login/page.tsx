@@ -26,21 +26,20 @@ export default function AdminLogin() {
 
       if (!res.ok) {
         setError(data.error || "Login failed");
+        setLoading(false);
         return;
       }
 
-      // Confirm cookie is set before redirecting (avoids redirect loop)
-      const verifyRes = await fetch("/api/auth/verify", { credentials: "include" });
-      if (!verifyRes.ok) {
-        setError("Session could not be established. Please try again.");
-        return;
-      }
-
+      // ✅ Do NOT call /api/auth/verify here.
+      // On Hostinger the browser hasn't committed the Set-Cookie header
+      // before the next fetch fires, so verify returns 401 every time
+      // → causes the endless redirect / "network error" loop.
+      // The middleware checks the cookie server-side on every page load,
+      // so just navigate directly — it will work.
       router.push("/admin/posts");
       router.refresh();
     } catch {
       setError("Network error. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
@@ -56,7 +55,6 @@ export default function AdminLogin() {
         padding: "24px",
       }}
     >
-      {/* BG orbs */}
       <div
         style={{
           position: "fixed",
@@ -70,21 +68,8 @@ export default function AdminLogin() {
           pointerEvents: "none",
         }}
       />
-
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "420px",
-          animation: "fadeUp 0.6s ease forwards",
-        }}
-      >
-        {/* Logo */}
-        <div
-          style={{
-            textAlign: "center",
-            marginBottom: "40px",
-          }}
-        >
+      <div style={{ width: "100%", maxWidth: "420px", animation: "fadeUp 0.6s ease forwards" }}>
+        <div style={{ textAlign: "center", marginBottom: "40px" }}>
           <div
             style={{
               display: "inline-flex",
@@ -120,7 +105,6 @@ export default function AdminLogin() {
           </p>
         </div>
 
-        {/* Card */}
         <div className="glass-strong" style={{ padding: "40px" }}>
           <h1
             style={{
@@ -132,13 +116,7 @@ export default function AdminLogin() {
           >
             Sign In
           </h1>
-          <p
-            style={{
-              color: "var(--muted)",
-              fontSize: "0.9rem",
-              marginBottom: "28px",
-            }}
-          >
+          <p style={{ color: "var(--muted)", fontSize: "0.9rem", marginBottom: "28px" }}>
             Access your blog management dashboard
           </p>
 
@@ -198,7 +176,10 @@ export default function AdminLogin() {
               disabled={loading}
             >
               {loading ? (
-                <span className="loader" style={{ width: "18px", height: "18px", borderWidth: "2px" }} />
+                <span
+                  className="loader"
+                  style={{ width: "18px", height: "18px", borderWidth: "2px" }}
+                />
               ) : (
                 <>
                   Sign In
@@ -211,14 +192,7 @@ export default function AdminLogin() {
           </form>
         </div>
 
-        <p
-          style={{
-            textAlign: "center",
-            marginTop: "20px",
-            color: "var(--muted2)",
-            fontSize: "0.8rem",
-          }}
-        >
+        <p style={{ textAlign: "center", marginTop: "20px", color: "var(--muted2)", fontSize: "0.8rem" }}>
           Protected area · HelpWithMyAssignments Admin
         </p>
       </div>

@@ -1,0 +1,262 @@
+.footer {
+  background: linear-gradient(135deg, #0A0F1C 0%, #141C2C 100%);
+  color: #E5E9F0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 3rem 2rem 1.5rem;
+}
+
+/* Main Content Layout */
+.mainContent {
+  display: grid;
+  grid-template-columns: 1.2fr 2fr;
+  gap: 4rem;
+  margin-bottom: 3rem;
+}
+
+/* Brand Section */
+.brandSection {
+  max-width: 380px;
+}
+
+.logoWrapper {
+  margin-bottom: 1.5rem;
+}
+
+.logo {
+  width: auto;
+  height: 64px; /* Double the original 32px */
+  object-fit: contain;
+  filter: brightness(0) invert(1); /* This inverts black to white */
+}
+
+.brandDescription {
+  color: #A0A8B8;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 1.75rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* Social Links */
+.socialLinks {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.socialLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #A0A8B8;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.socialLink:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+  transform: translateY(-2px);
+}
+
+.socialIcon {
+  font-size: 1.2rem;
+  font-weight: 400;
+}
+
+/* Links Grid */
+.linksGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.linkColumn {
+  min-width: 0;
+}
+
+.columnTitle {
+  color: #FFFFFF;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1.5rem;
+  position: relative;
+  padding-bottom: 0.75rem;
+}
+
+.columnTitle::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 35px;
+  height: 2px;
+  background: linear-gradient(90deg, #4F6AF5 0%, #8B5CF6 100%);
+  border-radius: 2px;
+}
+
+.linkList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.linkItem {
+  margin-bottom: 0.7rem;
+}
+
+.link {
+  color: #A0A8B8;
+  text-decoration: none;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  transition: all 0.2s ease;
+  display: inline-block;
+  position: relative;
+}
+
+.link:hover {
+  color: #FFFFFF;
+  transform: translateX(3px);
+}
+
+/* Bottom Bar */
+.bottomBar {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 1.75rem;
+  margin-top: 1.5rem;
+}
+
+.bottomBarContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.copyright {
+  color: #6B7A8F;
+  font-size: 0.9rem;
+  margin: 0;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.trustBadges {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.badge {
+  color: #A0A8B8;
+  font-size: 0.9rem;
+  position: relative;
+  padding: 0.25rem 0;
+}
+
+.badge:not(:last-child)::after {
+  content: "•";
+  position: absolute;
+  right: -1rem;
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .mainContent {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .brandSection {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 2.5rem 1.5rem 1.5rem;
+  }
+
+  .logo {
+    height: 56px; /* Slightly smaller on tablet but still larger than original */
+  }
+
+  .linksGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .bottomBarContent {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .trustBadges {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .badge:not(:last-child)::after {
+    right: -0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 2rem 1.25rem 1.25rem;
+  }
+
+  .logo {
+    height: 48px; /* Still larger than original on mobile */
+  }
+
+  .linksGrid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .socialLinks {
+    justify-content: flex-start;
+  }
+
+  .trustBadges {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .badge:not(:last-child)::after {
+    display: none;
+  }
+}
+
+/* Optional: Add a subtle pattern overlay */
+.footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(79, 106, 245, 0.3), rgba(139, 92, 246, 0.3), transparent);
+  pointer-events: none;
+}

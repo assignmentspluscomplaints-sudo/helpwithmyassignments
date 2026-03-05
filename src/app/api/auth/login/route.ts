@@ -26,8 +26,9 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ success: true, email: admin.email });
     response.cookies.set("admin_token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      // Relaxed settings to work reliably across hosts like Hostinger
+      secure: false,
+      sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: "/",
     });

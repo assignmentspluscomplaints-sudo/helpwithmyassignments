@@ -3,31 +3,31 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model Post {
   id         Int      @id @default(autoincrement())
-  title      String   @db.VarChar(500)
-  slug       String   @unique @db.VarChar(500)
-  excerpt    String   @db.Text
-  content    String   @db.LongText
-  coverImage String?  @db.VarChar(1000)
-  category   String   @default("General") @db.VarChar(100)
-  author     String   @default("Admin") @db.VarChar(200)
+  title      String
+  slug       String   @unique
+  excerpt    String
+  content    String
+  coverImage String?
+  category   String   @default("General")
+  author     String   @default("Admin")
   readTime   Int      @default(5)
   published  Boolean  @default(false)
-  metaTitle  String?  @db.VarChar(500)
-  metaDesc   String?  @db.Text
-  focusKw    String?  @db.VarChar(200)
+  metaTitle  String?
+  metaDesc   String?
+  focusKw    String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
 
 model Admin {
   id        Int      @id @default(autoincrement())
-  email     String   @unique @db.VarChar(200)
-  password  String   @db.VarChar(200)
+  email     String   @unique
+  password  String
   createdAt DateTime @default(now())
 }

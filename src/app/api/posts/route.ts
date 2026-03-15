@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAdminFromCookie } from "@/lib/auth";
 
 // GET /api/posts — public listing
 export async function GET(request: NextRequest) {
@@ -42,11 +41,6 @@ export async function GET(request: NextRequest) {
 // POST /api/posts — create (admin only)
 export async function POST(request: NextRequest) {
   try {
-    const admin = await getAdminFromCookie();
-    if (!admin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await request.json();
     const { title, slug, excerpt, content, coverImage, published, category, readTime, author } = body;
 

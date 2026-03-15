@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAdminFromCookie } from "@/lib/auth";
 
 interface RouteParams {
   params: { id: string };
@@ -22,9 +21,6 @@ export async function GET(_: NextRequest, { params }: RouteParams) {
 // PUT /api/posts/[id]
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const admin = await getAdminFromCookie();
-    if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
     const body = await request.json();
     const { title, slug, excerpt, content, coverImage, published, category, readTime, author } = body;
 
@@ -52,9 +48,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 // DELETE /api/posts/[id]
 export async function DELETE(_: NextRequest, { params }: RouteParams) {
   try {
-    const admin = await getAdminFromCookie();
-    if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
     await prisma.post.delete({ where: { id: parseInt(params.id) } });
     return NextResponse.json({ success: true });
   } catch {

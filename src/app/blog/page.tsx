@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BlogCard from "@/components/BlogCard";
 import { prisma } from "@/lib/prisma";
+import { getPublishedPostsFromFiles } from "@/lib/blogContentStore";
 
 export const metadata: Metadata = {
   title: "Blog | Academic Tips, Study Guides & Assignment Help",
@@ -29,37 +30,50 @@ export default async function BlogPage({
     category: string | null;
     author: string | null;
     readTime: number | null;
-    createdAt: Date;
+    createdAt: Date | string;
   }> = [];
 
   let categories: string[] = ["All"];
 
   try {
-    const allPosts = await prisma.post.findMany({
-      where: { published: true },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        excerpt: true,
-        coverImage: true,
-        category: true,
-        author: true,
-        readTime: true,
-        createdAt: true,
-      },
-    });
+    const filePosts = getPublishedPostsFromFiles();
 
-    // Get unique categories (filter out null)
-    const cats = Array.from(new Set(allPosts.map((p) => p.category).filter((c): c is string => c != null)));
-    categories = ["All", ...cats];
+    if (filePosts.length > 0) {
+      // Get unique categories (filter out null)
+      const cats = Array.from(
+        new Set(filePosts.map((p) => p.category).filter((c): c is string => c != null))
+      );
+      categories = ["All", ...cats];
+      posts = category === "All" ? filePosts : filePosts.filter((p) => p.category === category);
+    } else {
+      // Fallback for dev environments where JSON exports haven't been generated yet.
+      const allPosts = await prisma.post.findMany({
+        where: { published: true },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          excerpt: true,
+          coverImage: true,
+          category: true,
+          author: true,
+          readTime: true,
+          createdAt: true,
+        },
+      });
 
-    // Filter by category
-    posts =
-      category === "All"
-        ? allPosts
-        : allPosts.filter((p) => p.category === category);
+      // Get unique categories (filter out null)
+      const cats = Array.from(
+        new Set(
+          allPosts.map((p) => p.category).filter((c): c is string => c != null)
+        )
+      );
+      categories = ["All", ...cats];
+
+      // Filter by category
+      posts = category === "All" ? allPosts : allPosts.filter((p) => p.category === category);
+    }
   } catch {
     // DB not set up yet
   }

@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
+import { getPublishedPostsFromFiles } from "@/lib/blogContentStore";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl =
@@ -31,18 +32,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Dynamic blog posts
   let blogRoutes: MetadataRoute.Sitemap = [];
   try {
-    const posts = await prisma.post.findMany({
-      where: { published: true },
-      select: { slug: true, updatedAt: true },
-      orderBy: { updatedAt: "desc" },
-    });
+    const filePosts = getPublishedPostsFromFiles();
+    if (filePosts.length > 0) {
+      blogRoutes = filePosts.map((post) => ({
+        url: `${baseUrl}/blog/${post.slug}`,
+        lastModified: new Date(post.updatedAt),
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      }));
+    } else {
+      const posts = await prisma.post.findMany({
+        where: { published: true },
+        select: { slug: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+      });
 
-    blogRoutes = posts.map((post) => ({
-      url: `${baseUrl}/blog/${post.slug}`,
-      lastModified: post.updatedAt,
-      changeFrequency: "weekly" as const,
-      priority: 0.7,
-    }));
+      blogRoutes = posts.map((post) => ({
+        url: `${baseUrl}/blog/${post.slug}`,
+        lastModified: post.updatedAt,
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      }));
+    }
   } catch {
     // DB not ready
   }

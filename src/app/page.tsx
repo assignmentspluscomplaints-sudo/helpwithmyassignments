@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import LocationLink from "@/components/LocationLink";
 import FaqItem from "@/components/FaqItem";
 import { prisma } from "@/lib/prisma";
+import { getPublishedPostsFromFiles } from "@/lib/blogContentStore";
 import BlogCard from "@/components/BlogCard";
 import Script from "next/script";
 
@@ -128,26 +129,31 @@ export default async function HomePage() {
     category: string | null;
     author: string | null;
     readTime: number | null;
-    createdAt: Date;
+    createdAt: Date | string;
   }> = [];
 
   try {
-    latestPosts = await prisma.post.findMany({
-      where: { published: true },
-      orderBy: { createdAt: "desc" },
-      take: 3,
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        excerpt: true,
-        coverImage: true,
-        category: true,
-        author: true,
-        readTime: true,
-        createdAt: true,
-      },
-    });
+    const filePosts = getPublishedPostsFromFiles();
+    if (filePosts.length > 0) {
+      latestPosts = filePosts.slice(0, 3);
+    } else {
+      latestPosts = await prisma.post.findMany({
+        where: { published: true },
+        orderBy: { createdAt: "desc" },
+        take: 3,
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          excerpt: true,
+          coverImage: true,
+          category: true,
+          author: true,
+          readTime: true,
+          createdAt: true,
+        },
+      });
+    }
   } catch {
     // DB might not be set up yet
   }

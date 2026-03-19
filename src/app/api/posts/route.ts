@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { upsertPostFile } from "@/lib/blogContentStore";
 
 // GET /api/posts — public listing
 export async function GET(request: NextRequest) {
@@ -64,6 +65,26 @@ export async function POST(request: NextRequest) {
         author: author || "Admin",
       },
     });
+
+    // Also write a static JSON copy so the blog can be built without a DB.
+    try {
+      upsertPostFile({
+        id: post.id,
+        title: post.title,
+        slug: post.slug,
+        excerpt: post.excerpt ?? null,
+        coverImage: post.coverImage ?? null,
+        category: post.category ?? null,
+        author: post.author ?? null,
+        readTime: post.readTime ?? null,
+        published: post.published,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt,
+        content: post.content,
+      });
+    } catch {
+      // Non-fatal: DB write already succeeded.
+    }
 
     return NextResponse.json({ post }, { status: 201 });
   } catch (error: unknown) {

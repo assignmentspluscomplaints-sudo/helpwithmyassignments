@@ -7,7 +7,8 @@
     "build": "prisma generate && next build",
     "postbuild": "cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public",
     "start": "prisma migrate deploy && node .next/standalone/server.js",
-    "lint": "next lint"
+    "lint": "next lint",
+    "sync:blog": "npx ts-node --project tsconfig.json scripts/syncBlogPosts.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

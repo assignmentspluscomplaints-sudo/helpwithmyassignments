@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { deletePostFileBySlug, upsertPostFile } from "@/lib/blogContentStore";
 
 interface RouteParams {
   params: { id: string };
@@ -24,8 +25,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const body = await request.json();
     const { title, slug, excerpt, content, coverImage, published, category, readTime, author } = body;
 
+    const id = parseInt(params.id);
+    const oldPost = await prisma.post.findUnique({ where: { id } });
+
     const post = await prisma.post.update({
-      where: { id: parseInt(params.id) },
+      where: { id },
       data: {
         ...(title && { title }),
         ...(slug && { slug }),
@@ -39,6 +43,30 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       },
     });
 
+    // Keep the JSON mirror in sync (best-effort, non-fatal).
+    try {
+      upsertPostFile({
+        id: post.id,
+        title: post.title,
+        slug: post.slug,
+        excerpt: post.excerpt ?? null,
+        coverImage: post.coverImage ?? null,
+        category: post.category ?? null,
+        author: post.author ?? null,
+        readTime: post.readTime ?? null,
+        published: post.published,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt,
+        content: post.content,
+      });
+
+      if (oldPost && oldPost.slug && oldPost.slug !== post.slug) {
+        deletePostFileBySlug(oldPost.slug);
+      }
+    } catch {
+      // Non-fatal
+    }
+
     return NextResponse.json({ post });
   } catch {
     return NextResponse.json({ error: "Failed to update post" }, { status: 500 });
@@ -48,7 +76,17 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 // DELETE /api/posts/[id]
 export async function DELETE(_: NextRequest, { params }: RouteParams) {
   try {
-    await prisma.post.delete({ where: { id: parseInt(params.id) } });
+    const id = parseInt(params.id);
+    const oldPost = await prisma.post.findUnique({ where: { id } });
+
+    await prisma.post.delete({ where: { id } });
+
+    // Keep the JSON mirror in sync (best-effort, non-fatal).
+    try {
+      if (oldPost?.slug) deletePostFileBySlug(oldPost.slug);
+    } catch {
+      // Non-fatal
+    }
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Failed to delete post" }, { status: 500 });

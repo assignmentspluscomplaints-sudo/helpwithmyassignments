@@ -5,6 +5,10 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { prisma } from "@/lib/prisma";
+import {
+  getPostBySlugFromFiles,
+  getPublishedPostsFromFiles,
+} from "@/lib/blogContentStore";
 
 interface Props {
   params: { slug: string };
@@ -13,10 +17,16 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   let post;
   try {
-    post = await prisma.post.findUnique({
-      where: { slug: params.slug, published: true },
-      select: { title: true, excerpt: true, coverImage: true },
-    });
+    // Prefer JSON content so builds work without a DB.
+    post = getPostBySlugFromFiles(params.slug);
+    if (!post || !post.published) post = null;
+
+    if (!post) {
+      post = await prisma.post.findUnique({
+        where: { slug: params.slug, published: true },
+        select: { title: true, excerpt: true, coverImage: true },
+      });
+    }
   } catch {
     return {};
   }
@@ -42,6 +52,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export async function generateStaticParams() {
   try {
+    const filePosts = getPublishedPostsFromFiles();
+    if (filePosts.length > 0) return filePosts.map((p) => ({ slug: p.slug }));
+
     const posts = await prisma.post.findMany({
       where: { published: true },
       select: { slug: true },
@@ -55,9 +68,14 @@ export async function generateStaticParams() {
 export default async function BlogPostPage({ params }: Props) {
   let post;
   try {
-    post = await prisma.post.findUnique({
-      where: { slug: params.slug, published: true },
-    });
+    post = getPostBySlugFromFiles(params.slug);
+    if (!post || !post.published) post = null;
+
+    if (!post) {
+      post = await prisma.post.findUnique({
+        where: { slug: params.slug, published: true },
+      });
+    }
   } catch {
     notFound();
   }
@@ -67,11 +85,19 @@ export default async function BlogPostPage({ params }: Props) {
   // Related posts
   let related: Array<{ title: string; slug: string; category: string | null; readTime: number | null }> = [];
   try {
-    related = await prisma.post.findMany({
-      where: { published: true, category: post.category, NOT: { id: post.id } },
-      take: 3,
-      select: { title: true, slug: true, category: true, readTime: true },
-    });
+    const filePosts = getPublishedPostsFromFiles();
+    if (filePosts.length > 0) {
+      related = filePosts
+        .filter((p) => p.category === post.category && p.id !== post.id)
+        .slice(0, 3)
+        .map((p) => ({ title: p.title, slug: p.slug, category: p.category, readTime: p.readTime }));
+    } else {
+      related = await prisma.post.findMany({
+        where: { published: true, category: post.category, NOT: { id: post.id } },
+        take: 3,
+        select: { title: true, slug: true, category: true, readTime: true },
+      });
+    }
   } catch {}
 
   const date = new Date(post.createdAt).toLocaleDateString("en-US", {
@@ -86,8 +112,8 @@ export default async function BlogPostPage({ params }: Props) {
     headline: post.title,
     description: post.excerpt,
     author: { "@type": "Person", name: post.author ?? "Unknown" },
-    datePublished: post.createdAt.toISOString(),
-    dateModified: post.updatedAt.toISOString(),
+    datePublished: new Date(post.createdAt).toISOString(),
+    dateModified: new Date(post.updatedAt).toISOString(),
     image: post.coverImage,
     publisher: {
       "@type": "Organization",
